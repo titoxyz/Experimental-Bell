@@ -101,9 +101,9 @@ async function writeExifImg(media, metadata, converted) {
   if (metadata.packname || metadata.author) {
     const img = new webp.Image();
     const json = {
-      'sticker-pack-id': `https://github.com/Rifza123`,
-      'sticker-pack-name': metadata.packname,
-      'sticker-pack-publisher': metadata.author,
+      'sticker-pack-id': `https://github.com/titoxyz`,
+      'sticker-pack-name': `Made On Earth`,
+      'sticker-pack-publisher': `By Tito`,
       emojis: metadata.categories ? metadata.categories : [''],
     };
     const exifAttr = Buffer.from([
@@ -136,9 +136,9 @@ async function writeExifVid(media, metadata, converted) {
   if (metadata.packname || metadata.author) {
     const img = new webp.Image();
     const json = {
-      'sticker-pack-id': `https://github.com/Rifza123`,
-      'sticker-pack-name': metadata.packname,
-      'sticker-pack-publisher': metadata.author,
+      'sticker-pack-id': `https://github.com/titoxyz`,
+      'sticker-pack-name': `Made On Earth`,
+      'sticker-pack-publisher': `By Tito`,
       emojis: metadata.categories ? metadata.categories : [''],
     };
     const exifAttr = Buffer.from([
