@@ -3,6 +3,7 @@ const axios = 'axios'.import();
 
 /*!-======[ Function Imports ]======-!*/
 const { mediafireDl } = await (fol[0] + 'mediafire.js').r();
+const youtubeScraper = await (fol[0] + 'youtubescraper.js').r();
 const { processMedia } = await './toolkit/ffmpeg.js'.r();
 const fs = 'fs'.import();
 
@@ -13,6 +14,118 @@ export default async function on({ cht, Exp, store, ev, is }) {
   let { archiveMemories: memories } = func;
   let { sender, id } = cht;
 
+// =======[ INSTAGRAM DOWNLOADER ]=======
+  ev.on(
+    {
+      cmd: ['instagramdl', 'ig', 'igdl', 'instagram'],
+      listmenu: ['instagramdl'],
+      tag: 'downloader',
+      urls: {
+        msg: true,
+        formats: ['instagram'],
+      },
+      energy: 5,
+    },
+    async ({ urls }) => {
+      const _key = keys[sender];
+      await cht.edit('```Processing Instagram...```', _key);
+      
+      try {
+        const encodedUrl = encodeURIComponent(urls[0]);
+        const apiUrl = `https://api.fikmydomainsz.xyz/download/instagram?url=${encodedUrl}`;
+        
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        if (!data.status || !data.result || !data.result.length) {
+          return cht.edit('❌ Gagal mendapatkan media Instagram', _key);
+        }
+        
+        const mediaItems = data.result;
+        
+        let text = '*!-======[ INSTAGRAM ]======-!*\n';
+        text += `\nCreator: ${data.creator || 'N/A'}`;
+        text += `\nTotal Media: ${mediaItems.length}`;
+        text += `\nURL: ${urls[0]}`;
+        text += `\nAPI: api.fikmydomainsz.xyz`;
+        
+        const firstMedia = mediaItems[0];
+        const info = {
+          text,
+          contextInfo: {
+            externalAdReply: {
+              title: cht.pushName,
+              body: 'Instagram Downloader',
+              thumbnailUrl: firstMedia.thumbnail,
+              sourceUrl: urls[0],
+              mediaUrl: firstMedia.url_download,
+              renderLargerThumbnail: true,
+              showAdAttribution: true,
+              mediaType: 1,
+            },
+            forwardingScore: 19,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+              newsletterName: 'Termai',
+              newsletterJid: '120363301254798220@newsletter',
+            },
+          },
+        };
+        
+        await Exp.sendMessage(id, info, { quoted: cht.reaction || cht });
+        await cht.edit(`\`\`\`Sending ${mediaItems.length} media...\`\`\``, _key);
+        
+        for (let i = 0; i < mediaItems.length; i++) {
+          const media = mediaItems[i];
+          const isVideo = media.kualitas?.toLowerCase().includes('video');
+          const isPhoto = media.kualitas?.toLowerCase().includes('photo');
+          
+          if (isVideo) {
+            await Exp.sendMessage(
+              id,
+              { 
+                video: { url: media.url_download }, 
+                mimetype: "video/mp4",
+                caption: `📹 Instagram Video\n${media.kualitas || ''}\n(${i + 1}/${mediaItems.length})`
+              },
+              { quoted: cht.reaction || cht }
+            );
+          } else if (isPhoto) {
+            await Exp.sendMessage(
+              id,
+              { 
+                image: { url: media.url_download },
+                caption: `📷 Instagram Photo\n${media.kualitas || ''}\n(${i + 1}/${mediaItems.length})`
+              },
+              { quoted: cht.reaction || cht }
+            );
+          } else {
+            await Exp.sendMessage(
+              id,
+              { 
+                document: { url: media.url_download },
+                mimetype: 'application/octet-stream',
+                fileName: `instagram_media_${i + 1}.${isVideo ? 'mp4' : 'jpg'}`,
+                caption: `📎 Instagram Media\n${media.kualitas || ''}\n(${i + 1}/${mediaItems.length})`
+              },
+              { quoted: cht.reaction || cht }
+            );
+          }
+          
+          if (i < mediaItems.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+        
+        await cht.edit(`✅ Success - ${mediaItems.length} media sent`, _key);
+        
+      } catch (e) {
+        console.error('Error pada igdl:', e);
+        await cht.edit(`❌ Instagram download gagal.\nError: ${e.message}`, _key);
+      }
+    }
+  );
+  
   ev.on(
     {
       cmd: ['pinterestdl', 'pindl'],
@@ -26,21 +139,39 @@ export default async function on({ cht, Exp, store, ev, is }) {
     },
     async ({ urls }) => {
       await cht.reply('```Processing...```');
-      let p = (
-        await fetch(
-          api.xterm.url +
-            '/api/downloader/pinterest?url=' +
-            urls[0] +
-            '&key=' +
-            api.xterm.key
-        ).then((a) => a.json())
-      ).data;
-      let pin = Object.values(p.videos)[0].url;
-      Exp.sendMessage(
-        id,
-        { video: { url: pin }, mimetype: 'video/mp4' },
-        { quoted: cht.reaction || cht }
-      );
+      try {
+        const api = await fetch(
+          `https://api.deline.web.id/downloader/pinterest?url=${encodeURIComponent(urls[0])}`
+        ).then(r => r.json());
+
+        if (!api.status) {
+          return cht.reply('Status API false');
+        }
+
+        const res = api?.result;
+        const type = res.video ? 'Video' : (res.image && res.image !== 'Tidak ada' ? 'Image' : '-');
+        const valid = v => typeof v === 'string' && v !== 'Tidak ada';
+
+        let text = '*!-======[ PINTEREST ]======-!*\n';
+        text += `\nLink: ${res.original_url}`;
+        text += `\nType: ${type}`;
+        if (res.title && res.title !== 'Tidak ada') text += `\nTitle: ${res.title}`;
+
+        if (valid(res?.video) || valid(res?.image)) {
+          await Exp.sendMessage(
+            id,
+            valid(res?.video)
+              ? { video: { url: res.video }, caption: text, mimetype: 'video/mp4' }
+              : { image: { url: res.image }, caption: text },
+            { quoted: cht.reaction || cht }
+          );
+        } else {
+          return cht.reply('Media tidak ditemukan');
+        }
+      } catch (e) {
+        console.error('Error pada pindl:', e);
+        await cht.reply(`Error: ${e.message}`);
+      }
     }
   );
 
@@ -75,6 +206,7 @@ export default async function on({ cht, Exp, store, ev, is }) {
     }
   );
 
+  // =======[ TIKTOK DOWNLOADER ]=======
   ev.on(
     {
       cmd: [
@@ -96,74 +228,163 @@ export default async function on({ cht, Exp, store, ev, is }) {
     },
     async ({ urls }) => {
       const _key = keys[sender];
-      await cht.edit(infos.messages.wait, _key);
+      await cht.edit('```Processing TikTok...```', _key);
       let isAudio = /^(vn|audio)/.test(cht.cmd);
-      let data = (
-        await fetch(
-          api.xterm.url +
-            '/api/downloader/tiktok?url=' +
-            urls[0] +
-            '&key=' +
-            api.xterm.key
-        ).then((a) => a.json())
-      ).data;
-
-      let text = '*!-======[ TIKTOK ]======-!*\n';
-      text += `\nTitle: ${data.title}`;
-      text += `\nAccount: ${data.author.nickname}`;
-      text += `\nLikes: ${data.stats.diggCount}`;
-      text += `\nComments: ${data.stats.commentCount}`;
-      text += `\nPostTime: ${data.createTime}`;
-      const info = {
-        text,
-        contextInfo: {
-          externalAdReply: {
-            title: cht.pushName,
-            body: 'Tiktok Downloader',
-            thumbnailUrl: data.thumbnail,
-            sourceUrl: 'https://github.com/Rifza123',
-            mediaUrl:
-              'http://ẉa.me/6283110928302/' +
-              Math.floor(Math.random() * 100000000000000000),
-            renderLargerThumbnail: true,
-            mediaType: 1,
+      
+      try {
+        const tikwmResponse = await axios.post(
+          'https://tikwm.com/api/',
+          {
+            url: urls[0],
+            count: 12,
+            cursor: 0,
+            web: 1,
+            hd: 1
           },
-          forwardingScore: 19,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterName: 'Termai',
-            newsletterJid: '120363301254798220@newsletter',
-          },
-        },
-      };
-      await Exp.sendMessage(id, info, { quoted: cht });
-      await cht.edit(infos.messages.sending, _key);
-      let type = data.type;
-      if (!isAudio && type == 'image') {
-        for (let image of data.media) {
-          await Exp.sendMessage(
-            id,
-            { image: { url: image.url } },
-            { quoted: cht }
-          );
-        }
-      }
-      if (!isAudio && type == 'video') {
-        await Exp.sendMessage(
-          id,
-          { video: { url: data.media[1].url } },
-          { quoted: cht }
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'User-Agent': 'Mozilla/5.0 (Linux; Android 10)',
+              'Referer': 'https://tikwm.com/'
+            }
+          }
         );
+        
+        if (tikwmResponse.data.code !== 0) {
+          throw new Error('Gagal mengambil data dari TikTok');
+        }
+        
+        const res = tikwmResponse.data.data;
+        
+        if (!res.hdplay && !res.play) {
+          throw new Error('Video tidak tersedia untuk download');
+        }
+        
+        let videoUrl = '';
+        if (res.hdplay) {
+          videoUrl = 'https://tikwm.com' + res.hdplay;
+        } else if (res.play) {
+          videoUrl = 'https://tikwm.com' + res.play;
+        }
+        
+        const createTime = res.create_time 
+          ? new Date(res.create_time * 1000).toLocaleString('id-ID', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : 'N/A';
+        
+        const rawSize = res.hd_size || res.size || 0;
+        const sizeText = rawSize >= 1024 * 1024
+          ? (rawSize / 1024 / 1024).toFixed(2) + ' MB'
+          : (rawSize / 1024).toFixed(2) + ' KB';
+        
+        let text = '*!-======[ TIKTOK ]======-!*\n';
+        text += `\nTitle: ${res.title || 'N/A'}`;
+        text += `\nAccount: ${res.author?.nickname || 'N/A'}`;
+        text += `\nUsername: @${res.author?.unique_id || 'N/A'}`;
+        text += `\nLikes: ${res.digg_count?.toLocaleString() || 0}`;
+        text += `\nComments: ${res.comment_count?.toLocaleString() || 0}`;
+        text += `\nShares: ${res.share_count?.toLocaleString() || 0}`;
+        text += `\nDuration: ${res.duration || 'N/A'}`;
+        text += `\nSize: ${sizeText}`;
+        text += `\nRegion: ${res.region || 'N/A'}`;
+        text += `\nUploaded: ${createTime}`;
+        
+        const info = {
+          text,
+          contextInfo: {
+            externalAdReply: {
+              title: cht.pushName,
+              body: 'TikTok Downloader',
+              thumbnailUrl: res.cover,
+              sourceUrl: urls[0],
+              mediaUrl: videoUrl,
+              renderLargerThumbnail: true,
+              mediaType: 2,
+            },
+            forwardingScore: 19,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+              newsletterName: 'Termai',
+              newsletterJid: '120363301254798220@newsletter',
+            },
+          },
+        };
+        
+        await Exp.sendMessage(id, info, { quoted: cht });
+        
+        if (!isAudio && videoUrl) {
+          await cht.edit('```Downloading video...```', _key);
+          
+          try {
+            const videoBuffer = await axios.get(videoUrl, {
+              responseType: 'arraybuffer',
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 10)',
+                'Referer': 'https://tikwm.com/'
+              }
+            }).then(response => response.data);
+            
+            await cht.edit('```Sending video...```', _key);
+            
+            await Exp.sendMessage(
+              id,
+              {
+                video: videoBuffer,
+                mimetype: 'video/mp4',
+                caption: `📹 ${res.title || 'TikTok Video'}`,
+                fileName: `tiktok_${Date.now()}.mp4`
+              },
+              { quoted: cht }
+            );
+          } catch (videoError) {
+            console.error('Error sending video:', videoError);
+            await cht.edit('```Sending as document...```', _key);
+            await Exp.sendMessage(
+              id,
+              {
+                document: { url: videoUrl },
+                mimetype: 'video/mp4',
+                fileName: `tiktok_${Date.now()}.mp4`,
+                caption: `📹 ${res.title || 'TikTok Video'} (Sent as document)`
+              },
+              { quoted: cht }
+            );
+          }
+        }
+        
+        if (res.music_info?.play) {
+          await cht.edit('```Sending audio...```', _key);
+          
+          try {
+            const audioUrl = res.music_info.play;
+            await Exp.sendMessage(
+              id,
+              {
+                audio: { url: audioUrl },
+                mimetype: 'audio/mpeg',
+                ptt: cht.cmd.includes('vn'),
+                fileName: `tiktok_audio_${Date.now()}.mp3`
+              },
+              { quoted: cht.reaction || cht }
+            );
+          } catch (audioError) {
+            console.error('Error sending audio:', audioError);
+            await cht.edit('❌ Gagal mengirim audio', _key);
+          }
+        }
+        
+        await cht.edit('✅ Success', _key);
+        
+      } catch (e) {
+        console.error('Error pada tiktokdl:', e);
+        await cht.edit(`❌ TikTok download gagal.\nError: ${e.message}`, _key);
       }
-      await Exp.sendMessage(
-        id,
-        {
-          audio: { url: data.audio.url },
-          mimetype: 'audio/mpeg',
-          ptt: cht.cmd.includes('vn'),
-        },
-        { quoted: cht.reaction || cht }
-      );
     }
   );
 
@@ -181,55 +402,67 @@ export default async function on({ cht, Exp, store, ev, is }) {
     async ({ urls }) => {
       const _key = keys[sender];
       await cht.edit(infos.messages.wait, _key);
-      let data = (
-        await fetch(
-          api.xterm.url +
-            '/api/downloader/spotify?url=' +
-            urls[0] +
-            '&key=' +
-            api.xterm.key
-        ).then((a) => a.json())
-      ).data;
-      let duration = data.trackDuration;
-      let m = Math.floor((duration % 3600) / 60);
-      let s = duration % 60;
-      let text = '*!-======[ Spotify🎵 ]======-!*\n';
-      text += `\nTrack: ${data.trackName}`;
-      text += `\nAccount: ${data.albumName}`;
-      text += `\nAlbumReleaseDate: ${data.albumReleaseDate}`;
-      text += `\nArtists: ${data.artists.join(', ')}`;
-      text += `\nTrackDuration: ${m + ':' + s}`;
-      text += `\nTrackPopularity: ${data.trackPopularity}`;
-      text += `\nTrackUrl: ${data.trackUrl}`;
-      const info = {
-        text,
-        contextInfo: {
-          externalAdReply: {
-            title: cht.pushName,
-            body: 'Spotify Downloader',
-            thumbnailUrl: data.albumImageUrl,
-            sourceUrl: 'https://github.com/Rifza123',
-            mediaUrl:
-              'http://ẉa.me/6283110928302/' +
-              Math.floor(Math.random() * 100000000000000000),
-            renderLargerThumbnail: true,
-            mediaType: 1,
+      
+      try {
+        const url = await fetch(
+          `https://api.danzy.web.id/api/download/spotify?url=${encodeURIComponent(urls[0])}`
+        ).then(r => r.json());
+
+        if (!url.status || !url.data) {
+          return cht.edit('Track tidak ditemukan', _key);
+        }
+
+        const data = url.data;
+        let duration = data.trackDuration || 0;
+        let m = Math.floor((duration % 3600) / 60);
+        let s = duration % 60;
+        
+        let text = '*!-======[ Spotify🎵 ]======-!*\n';
+        text += `\nTrack: ${data.trackName || 'N/A'}`;
+        text += `\nAlbum: ${data.albumName || 'N/A'}`;
+        text += `\nAlbumReleaseDate: ${data.albumReleaseDate || 'N/A'}`;
+        text += `\nArtists: ${data.artists ? data.artists.join(', ') : 'N/A'}`;
+        text += `\nTrackDuration: ${m + ':' + s}`;
+        text += `\nTrackPopularity: ${data.trackPopularity || 'N/A'}`;
+        text += `\nTrackUrl: ${data.trackUrl || urls[0]}`;
+        
+        const info = {
+          text,
+          contextInfo: {
+            externalAdReply: {
+              title: cht.pushName,
+              body: 'Spotify Downloader',
+              thumbnailUrl: data.albumImageUrl,
+              sourceUrl: 'https://github.com/Rifza123',
+              mediaUrl:
+                'http://ẉa.me/6283110928302/' +
+                Math.floor(Math.random() * 100000000000000000),
+              renderLargerThumbnail: true,
+              mediaType: 1,
+            },
+            forwardingScore: 19,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+              newsletterName: 'Termai',
+              newsletterJid: '120363301254798220@newsletter',
+            },
           },
-          forwardingScore: 19,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterName: 'Termai',
-            newsletterJid: '120363301254798220@newsletter',
-          },
-        },
-      };
-      await Exp.sendMessage(id, info, { quoted: cht });
-      await cht.edit(infos.messages.sending, _key);
-      await Exp.sendMessage(
-        id,
-        { audio: { url: data.downloadUrl }, mimetype: 'audio/mpeg' },
-        { quoted: cht.reaction || cht }
-      );
+        };
+        
+        await Exp.sendMessage(id, info, { quoted: cht });
+        await cht.edit(infos.messages.sending, _key);
+        
+        if (data.downloadUrl) {
+          await Exp.sendMessage(
+            id,
+            { audio: { url: data.downloadUrl }, mimetype: 'audio/mpeg' },
+            { quoted: cht.reaction || cht }
+          );
+        }
+      } catch (e) {
+        console.error('Error pada spotify:', e);
+        await cht.edit(`Error: ${e.message}`, _key);
+      }
     }
   );
 
@@ -248,67 +481,72 @@ export default async function on({ cht, Exp, store, ev, is }) {
       const _key = keys[sender];
       await cht.edit(infos.messages.wait, _key);
 
-      let res = await await fetch(
-        api.xterm.url +
-          '/api/downloader/rednote?url=' +
-          urls[0] +
-          '&key=' +
-          api.xterm.key
-      ).then((a) => a.json());
-      if (!res.status) return cht.reply(res.msg);
-      let data = res.data;
-      let text = '*!-======[ Rednote ]======-!*\n';
-      text += `\nTitle: ${data.title}`;
-      text += `\nAccount: ${data.user.nickName}`;
-      text += `\nLikes: ${data.interactInfo.likedCount}`;
-      text += `\nComments: ${data.commentCountL1}`;
-      text += `\nPostTime: ${func.dateFormatter(data.time, 'Asia/Jakarta')}`;
-      const info = {
-        text,
-        contextInfo: {
-          externalAdReply: {
-            title: cht.pushName,
-            body: 'Rednote Downloader',
-            thumbnailUrl: data.images[0].url,
-            sourceUrl: 'https://github.com/Rifza123',
-            mediaUrl:
-              'http://ẉa.me/6283110928302/' +
-              Math.floor(Math.random() * 100000000000000000),
-            renderLargerThumbnail: true,
-            mediaType: 1,
+      try {
+        const response = await fetch(
+          `https://api.deline.web.id/downloader/xiaohongshu?url=${encodeURIComponent(urls[0])}`
+        );
+        const res = await response.json();
+        
+        if (!res.status || !res.result) {
+          return cht.reply('Gagal mengambil data Rednote/Xiaohongshu');
+        }
+        
+        let data = res.result;
+        let text = '*!-======[ Rednote/Xiaohongshu ]======-!*\n';
+        text += `\nTitle: ${data.title || 'N/A'}`;
+        text += `\nAccount: ${data.user?.nickName || 'N/A'}`;
+        text += `\nLikes: ${data.interactInfo?.likedCount || 0}`;
+        text += `\nComments: ${data.commentCountL1 || 0}`;
+        text += `\nPostTime: ${func.dateFormatter(data.time || Date.now(), 'Asia/Jakarta')}`;
+        
+        const info = {
+          text,
+          contextInfo: {
+            externalAdReply: {
+              title: cht.pushName,
+              body: 'Rednote Downloader',
+              thumbnailUrl: data.images?.[0]?.url || data.cover,
+              sourceUrl: 'https://github.com/Rifza123',
+              mediaUrl:
+                'http://ẉa.me/6283110928302/' +
+                Math.floor(Math.random() * 100000000000000000),
+              renderLargerThumbnail: true,
+              mediaType: 1,
+            },
+            forwardingScore: 19,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+              newsletterName: 'Termai',
+              newsletterJid: '120363301254798220@newsletter',
+            },
           },
-          forwardingScore: 19,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterName: 'Termai',
-            newsletterJid: '120363301254798220@newsletter',
-          },
-        },
-      };
-      await Exp.sendMessage(id, info, { quoted: cht });
-      await cht.edit(infos.messages.sending, _key);
-      let type = data.type;
-      if (type == 'image') {
-        for (let image of data.images) {
+        };
+        
+        await Exp.sendMessage(id, info, { quoted: cht });
+        await cht.edit(infos.messages.sending, _key);
+        
+        let type = data.type;
+        if (type == 'image' && data.images) {
+          for (let image of data.images) {
+            await Exp.sendMessage(
+              id,
+              { image: { url: image.url } },
+              { quoted: cht.reaction || cht }
+            );
+          }
+        } else if (type == 'video' && data.video?.url) {
           await Exp.sendMessage(
             id,
-            {
-              image: { url: image.url },
-              // caption: image.width + 'x' + image.height,
-            },
+            { video: { url: data.video.url } },
             { quoted: cht.reaction || cht }
           );
         }
-      } else if (type == 'video') {
-        await Exp.sendMessage(
-          id,
-          { video: { url: data.video.url } },
-          { quoted: cht.reaction || cht }
-        );
+      } catch (e) {
+        console.error('Error pada rednote:', e);
+        await cht.edit(`Error: ${e.message}`, _key);
       }
     }
   );
-
   ev.on(
     {
       cmd: [
