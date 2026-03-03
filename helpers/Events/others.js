@@ -13,7 +13,7 @@ export default async function on({ cht, Exp, store, ev, is }) {
     {
       cmd: ['menu'],
       listmenu: ['menu'],
-      tag: 'other',
+      tag: 'others',
     },
     async ({ args: v }) => {
       let [args, type] = v?.split('--');
@@ -275,7 +275,7 @@ export default async function on({ cht, Exp, store, ev, is }) {
     {
       cmd: ['reaction', 'menureaction', 'reactionmenu'],
       listmenu: ['reactionmenu'],
-      tag: 'other',
+      tag: 'others',
     },
     () => {
       cht.reply(infos.reaction.menu);
@@ -312,7 +312,7 @@ export default async function on({ cht, Exp, store, ev, is }) {
     {
       cmd: ['d', 'del', 'delete'],
       listmenu: ['delete'],
-      tag: 'other',
+      tag: 'others',
       isQuoted: true,
     },
     async () => {
@@ -340,7 +340,7 @@ ${infos.others.readMore}
     {
       cmd: ['statistic', 'stats'],
       listmenu: ['stats'],
-      tag: 'other',
+      tag: 'others',
     },
     async () => {
       const { cpuUsage, memoryUsage, processStats } =
@@ -490,4 +490,39 @@ ${infos.others.readMore}
       await cht.reply(teks ? header + teks : 'Belum ada data pesan 🙂');
     }
   );
+  /*!-======[ Konfigurasi QRIS ]======-!*/
+const QRIS = {
+  imageUrl: 'https://c.termai.cc/i150/ySDsY.jpg',
+  name: 'FERRY TITO PRASETYO',
+  business: 'SERVIS ELEKTRONIK',
+  nmiid: 'ID1025448193454',
+  contact: '6285607290187'
+};
+
+  // =======[ COMMAND DONASI ]=======
+  ev.on({
+    cmd: ['donasi', 'donate', 'qris'],
+    listmenu: ['donasi'],
+      tag: 'others',
+  }, async () => {
+    try {
+      // Pesan sederhana
+      let text = `*DONASI*\n\n`;
+      text += `Halo *${pushName || sender.split('@')[0]}*,\n\n`;
+      text += `Shopeepay 085607290187.\n`;
+      text += `Seabank 901042830603.\n`;
+      text += `Gopay 085607290187.\n`;
+      text += `📞 Kontak: wa.me/${QRIS.contact}`;
+      
+      // Kirim QRIS
+      await Exp.sendMessage(id, {
+        image: { url: QRIS.imageUrl },
+        caption: text
+      });
+      
+    } catch (e) {
+      console.log('Error donasi:', e);
+      await cht.reply('Gagal menampilkan QRIS');
+    }
+  });
 }
