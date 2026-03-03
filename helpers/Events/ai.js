@@ -1391,7 +1391,7 @@ ${loraText}
       }
     }
   );
-
+/*
   ev.on(
     {
       cmd: ['imageedit', 'edit'],
@@ -1494,7 +1494,7 @@ ${loraText}
       'illustration of a 1/7 scale figure, highly detailed and realistic style, placed on a computer desk. the figure is mounted on a circular transparent acrylic base (no text or logos). on the computer screen, show the 3D modeling process of the same figure. next to the monitor, place a Tamiya-style toy packaging box with the original artwork printed on it. scene should look natural, clean, and photorealistic.',
     ]),
   ]);
-
+*/
   ev.on(
     {
       cmd: Object.keys(edits),
